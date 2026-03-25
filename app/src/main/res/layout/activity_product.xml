@@ -5,6 +5,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <Button
+        android:id="@+id/btnGoCart"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Xem giỏ hàng / Checkout"/>
+
     <ListView
         android:id="@+id/lvProducts"
         android:layout_width="match_parent"

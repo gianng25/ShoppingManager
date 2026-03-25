@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -32,10 +33,36 @@ public class ProductActivity extends AppCompatActivity {
         lvProducts = findViewById(R.id.lvProducts);
         db = AppDB.getInstance(this);
 
-        productList = db.dao().getAllProducts();
-        List<String> names = new ArrayList<>();
+        Button btnGoCart = findViewById(R.id.btnGoCart);
+        btnGoCart.setOnClickListener(v ->
+                startActivity(new Intent(this, CartActivity.class)));
 
-        for(Product p : productList){
+        loadProducts();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Nếu vừa login xong và có sản phẩm chờ thêm
+        SharedPreferences sp = getSharedPreferences("LOGIN", MODE_PRIVATE);
+        boolean isLogin = sp.getBoolean("isLogin", false);
+        int pendingProductId = sp.getInt("pendingProductId", -1);
+
+        if (isLogin && pendingProductId != -1) {
+            addProductToCart(pendingProductId);
+
+            sp.edit().remove("pendingProductId").apply();
+
+            Toast.makeText(this, "Đã thêm sản phẩm sau khi đăng nhập", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void loadProducts() {
+        productList = db.dao().getAllProducts();
+
+        List<String> names = new ArrayList<>();
+        for (Product p : productList) {
             names.add(p.name + " - " + p.price);
         }
 
@@ -46,41 +73,54 @@ public class ProductActivity extends AppCompatActivity {
         ));
 
         lvProducts.setOnItemClickListener((parent, view, position, id) -> {
+            Product p = productList.get(position);
+
             SharedPreferences sp = getSharedPreferences("LOGIN", MODE_PRIVATE);
             boolean isLogin = sp.getBoolean("isLogin", false);
 
-            if(!isLogin){
-                Toast.makeText(this, "Bạn phải đăng nhập trước", Toast.LENGTH_SHORT).show();
+            if (!isLogin) {
+                // lưu sản phẩm đang chọn rồi chuyển login
+                sp.edit().putInt("pendingProductId", p.id).apply();
+
+                Toast.makeText(this, "Bạn cần đăng nhập trước", Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(this, LoginActivity.class));
                 return;
             }
 
-            String username = sp.getString("username", "");
-            Product p = productList.get(position);
-
-            Order order = db.dao().getPendingOrder(username);
-            if(order == null){
-                order = new Order();
-                order.username = username;
-                order.orderDate = System.currentTimeMillis();
-                order.status = "Pending";
-                long oid = db.dao().insertOrder(order);
-                order.id = (int) oid;
-            }
-
-            OrderDetail detail = db.dao().getOrderDetail(order.id, p.id);
-            if(detail == null){
-                detail = new OrderDetail();
-                detail.orderId = order.id;
-                detail.productId = p.id;
-                detail.quantity = 1;
-                detail.unitPrice = p.price;
-                db.dao().insertOrderDetail(detail);
-            } else {
-                db.dao().updateQuantity(detail.id, detail.quantity + 1);
-            }
-
+            addProductToCart(p.id);
             Toast.makeText(this, "Đã thêm vào giỏ hàng", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void addProductToCart(int productId) {
+        SharedPreferences sp = getSharedPreferences("LOGIN", MODE_PRIVATE);
+        String username = sp.getString("username", "");
+
+        Product p = db.dao().getProductById(productId);
+        if (p == null) return;
+
+        Order order = db.dao().getPendingOrder(username);
+
+        if (order == null) {
+            order = new Order();
+            order.username = username;
+            order.orderDate = System.currentTimeMillis();
+            order.status = "Pending";
+            long oid = db.dao().insertOrder(order);
+            order.id = (int) oid;
+        }
+
+        OrderDetail detail = db.dao().getOrderDetail(order.id, p.id);
+
+        if (detail == null) {
+            detail = new OrderDetail();
+            detail.orderId = order.id;
+            detail.productId = p.id;
+            detail.quantity = 1;
+            detail.unitPrice = p.price;
+            db.dao().insertOrderDetail(detail);
+        } else {
+            db.dao().updateQuantity(detail.id, detail.quantity + 1);
+        }
     }
 }

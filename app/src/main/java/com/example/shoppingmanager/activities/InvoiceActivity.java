@@ -32,15 +32,14 @@ public class InvoiceActivity extends AppCompatActivity {
         StringBuilder sb = new StringBuilder();
         sb.append("HÓA ĐƠN\n\n");
 
-        for(CartView c : list){
-            sb.append(c.productName)
-                    .append(" - SL: ").append(c.quantity)
-                    .append(" - Giá: ").append(c.unitPrice)
-                    .append(" - TT: ").append(c.total)
-                    .append("\n");
+        for (CartView c : list) {
+            sb.append("Tên SP: ").append(c.productName).append("\n")
+                    .append("Số lượng: ").append(c.quantity).append("\n")
+                    .append("Đơn giá: ").append(c.unitPrice).append("\n")
+                    .append("Thành tiền: ").append(c.total).append("\n\n");
         }
 
-        sb.append("\nTổng cộng: ").append(total == null ? 0 : total);
+        sb.append("Tổng cộng: ").append(total == null ? 0 : total);
         tvInvoice.setText(sb.toString());
     }
 }

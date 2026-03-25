@@ -39,18 +39,42 @@ public class CartActivity extends AppCompatActivity {
         db = AppDB.getInstance(this);
 
         SharedPreferences sp = getSharedPreferences("LOGIN", MODE_PRIVATE);
-        String username = sp.getString("username", "");
+        boolean isLogin = sp.getBoolean("isLogin", false);
 
-        order = db.dao().getPendingOrder(username);
-        if(order == null){
-            Toast.makeText(this, "Giỏ hàng trống", Toast.LENGTH_SHORT).show();
+        if (!isLogin) {
+            Toast.makeText(this, "Bạn phải đăng nhập trước", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
             return;
         }
 
+        String username = sp.getString("username", "");
+        order = db.dao().getPendingOrder(username);
+
+        if (order == null) {
+            Toast.makeText(this, "Chưa có đơn hàng", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        loadCart();
+
+        btnCheckout.setOnClickListener(v -> {
+            order.status = "Paid";
+            db.dao().updateOrder(order);
+
+            Intent intent = new Intent(this, InvoiceActivity.class);
+            intent.putExtra("orderId", order.id);
+            startActivity(intent);
+            finish();
+        });
+    }
+
+    private void loadCart() {
         List<CartView> list = db.dao().getCartView(order.id);
         List<String> data = new ArrayList<>();
 
-        for(CartView c : list){
+        for (CartView c : list) {
             data.add(c.productName + " | SL: " + c.quantity + " | Giá: " + c.unitPrice + " | Thành tiền: " + c.total);
         }
 
@@ -62,15 +86,5 @@ public class CartActivity extends AppCompatActivity {
 
         Double total = db.dao().getOrderTotal(order.id);
         tvTotal.setText("Tổng tiền: " + (total == null ? 0 : total));
-
-        btnCheckout.setOnClickListener(v -> {
-            order.status = "Paid";
-            db.dao().updateOrder(order);
-
-            Intent intent = new Intent(this, InvoiceActivity.class);
-            intent.putExtra("orderId", order.id);
-            startActivity(intent);
-            finish();
-        });
     }
 }

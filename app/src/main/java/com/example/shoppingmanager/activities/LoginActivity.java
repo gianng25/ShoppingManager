@@ -12,8 +12,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.shoppingmanager.R;
 import com.example.shoppingmanager.dal.AppDB;
 import com.example.shoppingmanager.entities.Account;
-import com.example.shoppingmanager.entities.Category;
-import com.example.shoppingmanager.entities.Product;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -31,7 +29,6 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin = findViewById(R.id.btnLogin);
 
         db = AppDB.getInstance(this);
-        seedData();
 
         btnLogin.setOnClickListener(v -> {
             String u = edtUser.getText().toString().trim();
@@ -39,57 +36,27 @@ public class LoginActivity extends AppCompatActivity {
 
             Account acc = db.dao().login(u, p);
 
-            if(acc != null){
+            if (acc != null) {
                 SharedPreferences sp = getSharedPreferences("LOGIN", MODE_PRIVATE);
-                SharedPreferences.Editor editor = sp.edit();
-                editor.putString("username", u);
-                editor.putBoolean("isLogin", true);
-                editor.apply();
+                sp.edit()
+                        .putString("username", u)
+                        .putBoolean("isLogin", true)
+                        .apply();
 
-                startActivity(new Intent(this, HomeActivity.class));
+                int pendingProductId = sp.getInt("pendingProductId", -1);
+
+                Toast.makeText(this, "Login thành công", Toast.LENGTH_SHORT).show();
+
+                if (pendingProductId != -1) {
+                    startActivity(new Intent(this, ProductActivity.class));
+                } else {
+                    startActivity(new Intent(this, HomeActivity.class));
+                }
+
                 finish();
             } else {
-                Toast.makeText(this, "Login failed", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Sai tài khoản hoặc mật khẩu", Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    private void seedData(){
-        if(db.dao().getAccount("admin") == null){
-            Account a = new Account();
-            a.username = "admin";
-            a.password = "123";
-            a.fullName = "Administrator";
-            db.dao().insertAccount(a);
-
-            Category c1 = new Category();
-            c1.name = "Điện thoại";
-            db.dao().insertCategory(c1);
-
-            Category c2 = new Category();
-            c2.name = "Laptop";
-            db.dao().insertCategory(c2);
-
-            Product p1 = new Product();
-            p1.name = "iPhone 15";
-            p1.price = 22000000;
-            p1.description = "Điện thoại Apple";
-            p1.categoryId = 1;
-            db.dao().insertProduct(p1);
-
-            Product p2 = new Product();
-            p2.name = "Samsung S24";
-            p2.price = 19000000;
-            p2.description = "Điện thoại Samsung";
-            p2.categoryId = 1;
-            db.dao().insertProduct(p2);
-
-            Product p3 = new Product();
-            p3.name = "MacBook Air M3";
-            p3.price = 30000000;
-            p3.description = "Laptop Apple";
-            p3.categoryId = 2;
-            db.dao().insertProduct(p3);
-        }
     }
 }

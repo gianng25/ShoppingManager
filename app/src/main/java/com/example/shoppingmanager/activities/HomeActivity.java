@@ -26,15 +26,7 @@ public class HomeActivity extends AppCompatActivity {
         btnCart = findViewById(R.id.btnCart);
         btnLogout = findViewById(R.id.btnLogout);
 
-        SharedPreferences sp = getSharedPreferences("LOGIN", MODE_PRIVATE);
-        boolean isLogin = sp.getBoolean("isLogin", false);
-        String username = sp.getString("username", "");
-
-        if(isLogin){
-            tvWelcome.setText("Xin chào: " + username);
-        } else {
-            tvWelcome.setText("Bạn chưa đăng nhập");
-        }
+        updateStatus();
 
         btnLogin.setOnClickListener(v ->
                 startActivity(new Intent(this, LoginActivity.class)));
@@ -46,10 +38,27 @@ public class HomeActivity extends AppCompatActivity {
                 startActivity(new Intent(this, CartActivity.class)));
 
         btnLogout.setOnClickListener(v -> {
-            SharedPreferences.Editor editor = sp.edit();
-            editor.clear();
-            editor.apply();
-            tvWelcome.setText("Bạn chưa đăng nhập");
+            SharedPreferences sp = getSharedPreferences("LOGIN", MODE_PRIVATE);
+            sp.edit().clear().apply();
+            updateStatus();
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateStatus();
+    }
+
+    private void updateStatus() {
+        SharedPreferences sp = getSharedPreferences("LOGIN", MODE_PRIVATE);
+        boolean isLogin = sp.getBoolean("isLogin", false);
+        String username = sp.getString("username", "");
+
+        if (isLogin) {
+            tvWelcome.setText("Xin chào: " + username);
+        } else {
+            tvWelcome.setText("Bạn chưa đăng nhập");
+        }
     }
 }
